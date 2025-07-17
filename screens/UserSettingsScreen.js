@@ -183,9 +183,8 @@ function UserSettingsWrapper() {
           if (stored) {
             const data = JSON.parse(stored);
             const mensagens = data.map((item, index) => `#${index + 1} - ${item.location}
-${new Date(item.time).toLocaleString()}`).join('
+${new Date(item.time).toLocaleString()}`).join('\n');
 
-');
             alert(`Histórico de localizações:
 
 ${mensagens}`);
