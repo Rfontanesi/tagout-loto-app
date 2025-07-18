@@ -1,63 +1,13 @@
 // screens/UserSettingsScreen.js
 import React, { useEffect, useState } from 'react';
-import { TextInput } from 'react-native';
-import { View, Text, StyleSheet, Button, ScrollView, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Button, ScrollView, Modal, TouchableOpacity, TextInput } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import UserSettingsScreen from './screens/UserSettingsScreen';
-
 import { Ionicons } from '@expo/vector-icons';
-
-const Tab = createBottomTabNavigator();
-import HistoricMapScreen from './screens/HistoricMapScreen';
-
-function ProfileTab() {
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ color, size }) => {
-          let iconName;
-          if (route.name === 'Perfil') iconName = 'person-circle';
-          if (route.name === 'Histórico') iconName = 'map';
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#D92B2B',
-        tabBarInactiveTintColor: 'gray',
-      })}
-    >
-      <Tab.Screen name="Perfil" component={UserSettingsScreen} />
-      <Tab.Screen name="Histórico" component={HistoricMapScreen} />
-    </Tab.Navigator>
-  );
-}
+import * as Location from 'expo-location';
 
 function UserSettingsWrapper() {
   const [role, setRole] = useState(null);
-
-  useEffect(() => {
-    const loadRole = async () => {
-      const saved = await AsyncStorage.getItem('userRole');
-      setRole(saved);
-    };
-    loadRole();
-  }, []);
-
-  const getRoleName = (role) => {
-    switch (role) {
-      case 'admin': return 'Administrador';
-      case 'supervisor': return 'Supervisão';
-      case 'operador': return 'Operação';
-      default: return 'Desconhecido';
-    }
-  };
-
-  const handleRoleChange = async (newRole) => {
-    await AsyncStorage.setItem('userRole', newRole);
-    setRole(newRole);
-  };
-
   const [name, setName] = useState('');
   const [emergency, setEmergency] = useState('');
   const [allergy, setAllergy] = useState('');
@@ -81,7 +31,14 @@ function UserSettingsWrapper() {
       const lastLockLocation = await AsyncStorage.getItem('lastLockLocation');
       if (lastLockLocation) setLocation(lastLockLocation);
     };
+
+    const loadRole = async () => {
+      const saved = await AsyncStorage.getItem('userRole');
+      setRole(saved);
+    };
+
     loadInfo();
+    loadRole();
 
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -96,9 +53,24 @@ function UserSettingsWrapper() {
     })();
   }, []);
 
+  const getRoleName = (role) => {
+    switch (role) {
+      case 'admin': return 'Administrador';
+      case 'supervisor': return 'Supervisão';
+      case 'operador': return 'Operação';
+      default: return 'Desconhecido';
+    }
+  };
+
+  const handleRoleChange = async (newRole) => {
+    await AsyncStorage.setItem('userRole', newRole);
+    setRole(newRole);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}><Ionicons name="person-circle" size={28} color="#D92B2B" /> Perfil do Usuário</Text>
+
       <Text style={styles.label}>Filtrar por data (YYYY-MM-DD):</Text>
       <TextInput
         style={styles.input}
@@ -106,8 +78,10 @@ function UserSettingsWrapper() {
         value={filterDate}
         onChangeText={(text) => setFilterDate(text)}
       />
+
       <Text style={styles.label}>Acesso atual:</Text>
       <Text style={styles.value}>{getRoleName(role)}</Text>
+
       <Text style={styles.label}>Nome:</Text>
       <Text style={styles.value}>{name || 'Não definido'}</Text>
 
@@ -177,17 +151,12 @@ function UserSettingsWrapper() {
             const data = JSON.parse(stored);
             setHistoricList(data);
             setShowMap(true);
-          } else {
-            alert('Nenhuma localização de cadeado registrada ainda.');
-          }
-          if (stored) {
-            const data = JSON.parse(stored);
-            const mensagens = data.map((item, index) => `#${index + 1} - ${item.location}
-${new Date(item.time).toLocaleString()}`).join('\n');
 
-            alert(`Histórico de localizações:
+            const mensagens = data.map((item, index) =>
+              `#${index + 1} - ${item.location}\n${new Date(item.time).toLocaleString()}`
+            ).join('\n');
 
-${mensagens}`);
+            alert(`Histórico de localizações:\n\n${mensagens}`);
           } else {
             alert('Nenhuma localização de cadeado registrada ainda.');
           }
@@ -205,7 +174,6 @@ ${mensagens}`);
           await AsyncStorage.setItem('cadeado_historico_localizacoes', JSON.stringify(historico));
           alert('Localização associada ao uso do cadeado com sucesso!');
         }}
-        }}
       />
 
       <Text style={styles.label}>Alterar tipo de acesso:</Text>
@@ -214,7 +182,8 @@ ${mensagens}`);
         <Ionicons.Button name="construct" backgroundColor="#D92B2B" onPress={() => handleRoleChange('supervisor')}>Supervisor</Ionicons.Button>
         <Ionicons.Button name="person" backgroundColor="#D92B2B" onPress={() => handleRoleChange('operador')}>Operador</Ionicons.Button>
       </View>
-          <Button
+
+      <Button
         title="Limpar histórico de localização"
         color="#999"
         onPress={async () => {
@@ -222,7 +191,8 @@ ${mensagens}`);
           alert('Histórico de localizações apagado com sucesso.');
         }}
       />
-          <Modal visible={showMap} animationType="slide">
+
+      <Modal visible={showMap} animationType="slide">
         <ScrollView contentContainerStyle={{ padding: 20 }}>
           <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Histórico de Localizações</Text>
           <MapView
@@ -265,36 +235,7 @@ ${mensagens}`);
   );
 }
 
-Tab.Screen name="Perfil" component={UserSettingsWrapper} />;
-
-import * as Location from 'expo-location';
-  const [role, setRole] = useState(null);
-
-  useEffect(() => {
-    const loadRole = async () => {
-      const saved = await AsyncStorage.getItem('userRole');
-      setRole(saved);
-    };
-    loadRole();
-  }, []);
-
-  const getRoleName = (role) => {
-    switch (role) {
-      case 'admin': return 'Administrador';
-      case 'supervisor': return 'Supervisão';
-      case 'operador': return 'Operação';
-      default: return 'Desconhecido';
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}><Ionicons name="person-circle" size={28} color="#D92B2B" /> Perfil do Usuário</Text>
-      <Text style={styles.label}>Acesso atual:</Text>
-      <Text style={styles.value}>{getRoleName(role)}</Text>
-    </View>
-  );
-}
+export default UserSettingsWrapper;
 
 const styles = StyleSheet.create({
   input: {
