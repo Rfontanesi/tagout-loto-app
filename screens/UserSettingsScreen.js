@@ -267,8 +267,6 @@ ${mensagens}`);
 
 Tab.Screen name="Perfil" component={UserSettingsWrapper} />;
 
-Tab.Screen name="Perfil" component={UserSettingsWrapper} />;
-
 import * as Location from 'expo-location';
   const [role, setRole] = useState(null);
 
